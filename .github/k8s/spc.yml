@@ -1,0 +1,25 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: kyc-service-secret
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "k8s/uat/kyc-service-secret"
+        objectType: secretsmanager
+        objectAlias: GIT_ENV.json
+
+---
+
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: credentials-secret
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "k8s/GIT_ENV/credentials"
+        objectType: secretsmanager
+        objectAlias: credentials.json        

@@ -1,0 +1,21 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: anchor-domain-service-hpa
+spec:
+  maxReplicas: MAX
+  minReplicas: MIN
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: anchor-domain-service-deploy
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: TARGET
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: WINDOW

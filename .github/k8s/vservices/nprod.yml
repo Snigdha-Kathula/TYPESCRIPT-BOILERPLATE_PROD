@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: anchor-domain-service-vs
+spec:
+  hosts:
+  - anchor-domain-service-preprod.internal-nprod.incred.com
+  gateways:
+  - istio-system/istio-ingressgateway
+  http:
+  - name: "kycservice"
+    route:
+    - destination:
+        host: anchor-domain-service-svc.services-preprod.svc.cluster.local
+        port:
+          number: 80
+    retries:
+      attempts: 5
+      perTryTimeout: 300s

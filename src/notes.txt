@@ -1,0 +1,4 @@
+classes: blueprint of an object
+objects: instances of classes
+properties / members: attributes of an object
+methods/ behaviours: functions that operate on the object's data

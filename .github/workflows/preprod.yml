@@ -1,0 +1,184 @@
+name: CICD
+
+on:
+  push:
+    branches:
+      - preprod
+      
+ 
+
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - runway
+
+env:
+  IMAGE_NAME: anchor-domain-service
+  K8S_PATH: /home/runner/work/anchor-domain-service/anchor-domain-service/.github/k8s
+  SCRIPTS: /home/runner/work/anchor-domain-service/anchor-domain-service/.github/k8s/scripts
+  KEY: ${{ secrets.UAT_CONFIG_KEY }}
+  BUCKET: incred-uat-credentials
+  S3_SECRETS_PATH: incred-uat-credentials/secrets
+  MODULE: anchor-domain-service
+  AWS_ACCOUNT_ID: 283551069584
+
+jobs:
+    
+  build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Log into registry
+        run: echo "${{ secrets.GIT_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GIT_USER }} --password-stdin
+
+      - name: Build image
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          ENV=$(python $SCRIPTS/get_env.py $BRANCH)
+
+        
+          #docker build --build-arg GIT_TOKEN=${{ secrets.GIT_TOKEN }} --build-arg ENV=$ENV . --file Dockerfile --tag $IMAGE_NAME
+          
+          echo "pwd is"
+          pwd
+          echo "hash"
+          echo $GITHUB_SHA
+          echo "npm version"
+          npm -version
+          echo "node version"
+          node -v
+          
+          docker build --build-arg GIT_TOKEN=${{ secrets.GIT_TOKEN }} --build-arg ENV=$ENV . --file Dockerfile --tag $IMAGE_NAME
+          
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository }}/$IMAGE_NAME
+
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          BRANCH=${GITHUB_REF##*/} 
+          ENV=$(python $SCRIPTS/get_env.py $BRANCH)
+
+          # Strip git ref prefix from version
+          # VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          VERSION=$ENV-${GITHUB_SHA}
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+
+  deploy:
+    needs: [build]
+    runs-on: self-hosted
+    permissions:
+      id-token: write
+      contents: write
+
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.15.3'
+      - id: install-aws-cli
+        uses: unfor19/install-aws-cli-action@v1.0.4
+        with:
+          version: 2     # default
+          verbose: false # default
+          arch: amd64    # allowed values: amd64, arm64
+          rootdir: ""    # defaults to "PWD"
+          workdir: ""    # defaults to "PWD/unfor19-awscli"
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::283551069584:role/backend_githubaction_role
+          aws-region: ap-south-1
+
+      - name: deploy to eks
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          SCRIPTS="${GITHUB_WORKSPACE}/.github/k8s/scripts"
+          K8S_PATH="${GITHUB_WORKSPACE}/.github/k8s"
+          ENV=$(python $SCRIPTS/get_env.py $BRANCH)
+          echo $ENV
+          TAG=$ENV-${GITHUB_SHA}
+
+          aws eks update-kubeconfig --name incred-test-updated --region ap-south-1
+          kubectl config set-context --current --namespace=services-$ENV
+
+
+          # Deploying config map
+
+          git clone https://${{ secrets.GIT_USER }}:${{ secrets.GIT_TOKEN }}@github.com/Incred-Engineers/k8s-nprod-config.git
+          cd k8s-nprod-config && git checkout $ENV
+
+          echo "module.exports=" > $SCRIPTS/$ENV-cm.js
+          cat config/$MODULE.json >> $SCRIPTS/$ENV-cm.js
+
+ 
+
+          mv $SCRIPTS/$ENV-cm.js scripts/
+
+          echo "module.exports=" > scripts/commons-cm.js
+          cat config/$MODULE.json >> scripts/commons-cm.js
+
+          echo "module.exports=" > scripts/config_map.js
+          cat config_maps/$MODULE.json >> scripts/config_map.js
+
+          node scripts/merge_cm.js $ENV > final_cm.json
+          cat final_cm.json
+          kubectl apply -f final_cm.json
+
+          # Deploying service and virtual service
+
+          if [[ $ENV == 'qa-apex' || $ENV == 'qa-runway' || $ENV == 'qa-pl' || $ENV == 'dev-ops' ]]
+          then
+            REQ_CPU=1000m
+            REQ_MEM=1500Mi
+            LIM_MEM=4000Mi
+            MIN_POD=3
+            MAX_POD=15
+          elif  [[ $ENV == 'dev-sme' || $ENV == 'dev-apex' || $ENV == 'qa-enach' ]]
+          then
+            REQ_CPU=1000m
+            REQ_MEM=1500Mi
+            LIM_MEM=4000Mi
+            MIN_POD=3
+            MAX_POD=8
+            
+          else
+            REQ_CPU=500m
+            REQ_MEM=500Mi
+            LIM_MEM=2000Mi
+            MIN_POD=1
+            MAX_POD=8
+          fi
+
+          sed -i -e "s/GIT_ENV/$ENV/g; s/ANCHOR_DOMAIN_SERVICE_VERSION/$TAG/g; s/REQ_CPU/$REQ_CPU/g; s/REQ_MEM/$REQ_MEM/g; s/LIM_MEM/$LIM_MEM/g" $K8S_PATH/deployment.yml
+          sed -i -e "s/GIT_ENV/$ENV/g" $K8S_PATH/vservices/nprod.yml $K8S_PATH/monitor.yml $K8S_PATH/pdb.yml $K8S_PATH/spc.yml
+          sed -i -e "s/MIN/$MIN_POD/g; s/MAX/$MAX_POD/g; s/TARGET/80/g; s/WINDOW/180/g" $K8S_PATH/hpa.yml
+          # sed -i -e "s/AWS_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" $K8S_PATH/serviceaccount.yml
+          # sed -i -e "s/ENV/uat/g" $K8S_PATH/spc.yml
+
+          kubectl apply -f $K8S_PATH/deployment.yml -f $K8S_PATH/service.yml -f $K8S_PATH/vservices/nprod.yml 
+          kubectl apply -f $K8S_PATH/monitor.yml -f $K8S_PATH/pdb.yml -f $K8S_PATH/hpa.yml
+          
+          

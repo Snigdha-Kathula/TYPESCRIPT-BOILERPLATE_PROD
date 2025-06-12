@@ -1,0 +1,5 @@
+{
+    "port": 3000,
+    "dynamoUrl": "http://dynamo.internal-prod.incred.com",
+    "documentServiceUrl": "https://document-service.internal-prod.incred.com"
+}

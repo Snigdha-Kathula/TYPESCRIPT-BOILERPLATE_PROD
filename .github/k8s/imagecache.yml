@@ -1,0 +1,11 @@
+apiVersion: kubefledged.k8s.io/v1alpha1
+kind: ImageCache
+metadata:
+  name: anchor-domain-service-imagecache
+  namespace: kube-fledged
+spec:
+  cacheSpec:
+  - images:
+    - docker.pkg.github.com/incred-engineers/anchor-domain-service/anchor-domain-service:API_VERSION
+  imagePullSecrets:
+  - name: incredreglatest

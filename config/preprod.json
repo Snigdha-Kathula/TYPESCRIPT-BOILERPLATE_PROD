@@ -1,0 +1,12 @@
+{
+    "port": 3000,
+    "dynamoUrl": "http://dynamo-qa-apex.internal-nprod.incred.com",
+    "documentServiceUrl": "https://document-service-preprod.internal-nprod.incred.com",
+    "db":{
+        "host": "127.0.0.1",
+        "port": 3306,
+        "user":"root",
+        "password": "incred@123",
+        "database": "typescript"
+    }
+}

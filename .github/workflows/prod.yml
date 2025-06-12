@@ -1,0 +1,168 @@
+name: CICD
+
+on:
+  push:
+    branches:
+      - prod
+
+    tags:
+      - v*
+
+env:
+  IMAGE_NAME: kycservice
+  K8S_PATH: /home/runner/work/kyc-service/kyc-service/.github/k8s
+  SCRIPTS: /home/runner/work/kyc-service/kyc-service/.github/k8s/scripts
+  KEY: ${{ secrets.PROD_CONFIG_KEY }}
+  BUCKET: k8s-prod-xa9mpp
+  S3_SECRETS_PATH: k8s-prod-xa9mpp/secrets
+  MODULE: kycservice
+  GITHUB_REPO: k8s-prod-config
+  AWS_ACCOUNT_ID: 175707725647
+
+jobs:
+  sonar-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_KYCSERVICE }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
+      #- uses: sonarsource/sonarqube-quality-gate-action@master
+      #  timeout-minutes: 5
+      #  env:
+      #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_KYCSERVICE }}
+      
+  build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Log into registry
+        run: echo "${{ secrets.GIT_TOKEN }}" | docker login docker.pkg.github.com -u ${{ secrets.GIT_USER }} --password-stdin
+
+      - name: Build image
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          ENV=$(python $SCRIPTS/get_env.py $BRANCH)
+
+          sh clone.sh ${{ secrets.GIT_USER }} ${{ secrets.GIT_TOKEN }} $BRANCH preprod
+          #docker build --build-arg GIT_TOKEN=${{ secrets.GIT_TOKEN }} --build-arg ENV=$ENV . --file Dockerfile --tag $IMAGE_NAME
+          
+          echo "pwd is"
+          pwd
+          echo "hash"
+          echo $GITHUB_SHA
+          echo "npm version"
+          npm -version
+          echo "node version"
+          node -v
+          
+          docker build --tag $IMAGE_NAME .
+          
+      - name: Push image
+        run: |
+          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
+
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          BRANCH=${GITHUB_REF##*/} 
+          ENV=$(python $SCRIPTS/get_env.py $BRANCH)
+
+          # Strip git ref prefix from version
+          # VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          VERSION=$ENV-${GITHUB_SHA}
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: deploy to eks
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          ENV=$(python $SCRIPTS/get_env.py $BRANCH)
+          echo $ENV
+          TAG=$ENV-${GITHUB_SHA}
+
+          aws eks update-kubeconfig --name incred-prod-eks --region ap-south-1
+          kubectl config set-context --current --namespace=services-$ENV
+
+
+          # Deploying config map
+
+          git clone https://${{ secrets.GIT_USER }}:${{ secrets.GIT_TOKEN }}@github.com/Incred-Engineers/$GITHUB_REPO.git
+          
+          cd $GITHUB_REPO && git checkout $ENV
+          echo "module.exports=" > scripts/$ENV-cm.js
+          
+          cat config/$MODULE.json >> scripts/$ENV-cm.js
+          echo "module.exports=" > scripts/config_map.js
+          
+          cat config_maps/$MODULE.json >> scripts/config_map.js
+          node scripts/merge_cm.js $ENV > final_cm.json
+          
+          kubectl apply -f final_cm.json
+
+
+          # Deploying secret
+
+          aws s3 cp s3://$S3_SECRETS_PATH/$MODULE.incred $MODULE.incred
+          echo "module.exports=" > scripts/$ENV-secret.js
+          
+          node scripts/decrypt.js $MODULE.incred $KEY >> scripts/$ENV-secret.js
+          echo "module.exports=" > scripts/secret.js
+          cat secrets/$MODULE.json >> scripts/secret.js
+          
+          node scripts/merge_secret.js $ENV > final_secret.json
+          kubectl apply -f final_secret.json
+
+
+          # Deploying service and virtual service
+
+            REQ_CPU=500m
+            REQ_MEM=500Mi
+            LIM_MEM=2000Mi
+            MIN_POD=2
+            MAX_POD=3
+            WINDOW=300
+            TARGET=80
+
+          sed -i -e "s/GIT_ENV/$ENV/g; s/KYC_VERSION/$TAG/g; s/REQ_CPU/$REQ_CPU/g; s/REQ_MEM/$REQ_MEM/g; s/LIM_MEM/$LIM_MEM/g" $K8S_PATH/deployment.yml $K8S_PATH/spc.yml
+          sed -i -e "s/GIT_ENV/$ENV/g" $K8S_PATH/vservices/prod.yml $K8S_PATH/monitor.yml $K8S_PATH/pdb.yml
+          sed -i -e "s/MIN/$MIN_POD/g; s/MAX/$MAX_POD/g; s/TARGET/80/g; s/WINDOW/180/g" $K8S_PATH/hpa.yml
+          sed -i -e "s/uat/prod/g" $K8S_PATH/spc.yml
+          sed -i -e "s/AWS_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" $K8S_PATH/serviceaccount.yml
+
+          sed -i -e "s/AWS_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" $K8S_PATH/serviceaccount.yml
+
+          kubectl apply -f $K8S_PATH/deployment.yml -f $K8S_PATH/service.yml -f $K8S_PATH/vservices/prod.yml -f $K8S_PATH/pdb.yml -f $K8S_PATH/hpa.yml -f $K8S_PATH/serviceaccount.yml -f $K8S_PATH/spc.yml
+
+          

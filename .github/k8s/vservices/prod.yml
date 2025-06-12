@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kycservice-vs
+spec:
+  hosts:
+  - kycservice.internal-prod.incred.com
+  gateways:
+  - istio-system/istio-ingressgateway
+  http:
+  - name: "kycservice"
+    retries:
+      attempts: 5
+      perTryTimeout: 600s
+    route:
+    - destination:
+        host: kycservice-svc.services-GIT_ENV.svc.cluster.local
+        port:
+          number: 80

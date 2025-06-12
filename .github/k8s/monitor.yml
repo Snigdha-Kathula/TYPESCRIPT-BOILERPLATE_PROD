@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: anchor-domain-service-monitor
+spec:
+  selector:
+    matchLabels:
+      app: anchor-domain-service
+  namespaceSelector:
+    matchNames:
+      - services-GIT_ENV
+  endpoints:
+    - port: http
+      scheme: http
+      path: '/metrics'
+      interval: 60s

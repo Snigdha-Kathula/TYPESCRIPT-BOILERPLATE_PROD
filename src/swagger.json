@@ -1,0 +1,766 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Typescript Domain Service Documentation",
+        "description": "Anchor Domain Service functions as a standalone module that handles all the requests related to Anchor Product."
+    },
+    "servers": [
+        {
+            "url": "https://anchor-service-preprod.internal-nprod.incred.com/v1",
+            "description": "Preprod"
+        },
+        {
+            "url": "https://anchor-service.internal-prod.incred.com/v1",
+            "description": "Prod"
+        },
+        {
+            "url": "http://localhost:3000/v1",
+            "description": "Local"
+        }
+    ],
+    "paths": {
+        "/lead/generate": {
+            "post": {
+                "tags": [
+                    "Lead"
+                ],
+                "summary": "Generation of a lead",
+                "parameters": [
+                    {
+                        "name": "MOBILE",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "SOURCE",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PLATFORM",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "UTM_MEDIUM",
+                        "in": "path",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PAN",
+                        "in": "path",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "NAME",
+                        "in": "path",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PIN",
+                        "in": "path",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request Processed Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Successresponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No Match found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Failedresponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lead/verify": {
+            "post": {
+                "tags": [
+                    "Lead"
+                ],
+                "summary": "Verification of a lead",
+                "parameters": [
+                    {
+                        "name": "LEAD_ID",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "OTP",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request Processed Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Successresponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No Match found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Failedresponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lead/update": {
+            "post": {
+                "tags": [
+                    "Lead"
+                ],
+                "summary": "Updation of a lead",
+                "parameters": [
+                    {
+                        "name": "LEAD_ID",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PAN",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "AADHAAR",
+                        "in": "path",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PIN",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "ADDRESS",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "MERCHANT_SELLER_NAME",
+                        "in": "path",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "SELLER_ID",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request Processed Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Successresponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No Match found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Failedresponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/application/create": {
+            "post": {
+                "tags": [
+                    "Application"
+                ],
+                "summary": "Application create",
+                "parameters": [
+                    {
+                        "name": "BRANCH_LOCATION",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "SOURCE_TYPE",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "SCHEME_TYPE",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "SALES_SOURCING_CHANNEL",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "LOAN_TYPE",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "LOAN_SCHEME",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PLATFORM",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request Processed Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Successresponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No Match found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Failedresponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/customer/create": {
+            "post": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Customer create",
+                "parameters": [
+                    {
+                        "name": "COMPANY_CATEGORY",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "FIRST_NAME",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "LAST_NAME",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "MOBILE",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "EMAIL",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "PAN",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "GENDER",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request Processed Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Successresponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No Match found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Failedresponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Application": {
+                "type": "object",
+                "properties": {
+                    "APPLICATION_ID": {
+                        "type": "string",
+                        "example": "7654126136561087A"
+                    },
+                    "APPLICATION_COMPLETE_FLAG": {
+                        "type": "string",
+                        "example": "Yes"
+                    },
+                    "DEAL_ID": {
+                        "type": "string",
+                        "example": "852756"
+                    },
+                    "EPOCH": {
+                        "type": "integer"
+                    },
+                    "FINANCIAL": {
+                        "type": "object"
+                    },
+                    "IS_PERMANENT_ADDRESS_SAME_AS_PRESENT": {
+                        "type": "string",
+                        "example": "No"
+                    },
+                    "LOAN_AMOUNT": {
+                        "type": "integer"
+                    },
+                    "LOAN_ID": {
+                        "type": "string",
+                        "example": "LXMUM33920-211595925"
+                    },
+                    "LOAN_PURPOSE": {
+                        "type": "object",
+                        "$ref": "#/components/schemas/LoanPurpose"
+                    },
+                    "LOAN_RATE": {
+                        "type": "integer"
+                    },
+                    "LOAN_SCHEME": {
+                        "type": "string",
+                        "example": "PL_CL"
+                    },
+                    "LOAN_TENURE": {
+                        "type": "integer"
+                    },
+                    "LOAN_TYPE": {
+                        "type": "string",
+                        "example": "PL"
+                    },
+                    "PARENT_APPLICATION_ID": {
+                        "type": "string",
+                        "example": "7605410926061033A"
+                    },
+                    "PARTNER": {
+                        "type": "object",
+                        "$ref": "#/components/schemas/Partner"
+                    },
+                    "PARTNER_REFERENCE": {
+                        "type": "string",
+                        "example": "5808492"
+                    },
+                    "PERMANENT_ADDRESS_FLAG": {
+                        "type": "string",
+                        "example": "Yes"
+                    },
+                    "PERSONNEL_ID": {
+                        "type": "string",
+                        "example": "lending-techops@mobikwik.com"
+                    },
+                    "PLATFORM": {
+                        "type": "string",
+                        "example": "VENDOR_V2"
+                    },
+                    "SANCTION_DETAIL": {
+                        "type": "object"
+                    },
+                    "SCORE": {
+                        "type": "integer"
+                    },
+                    "STATE": {
+                        "type": "string",
+                        "example": "WORKFLOW"
+                    },
+                    "STATUS": {
+                        "type": "string",
+                        "example": "COMPLETED"
+                    },
+                    "WORKFLOW": {
+                        "type": "object"
+                    },
+                    "CUSTOMER": {
+                        "type": "object"
+                    },
+                    "NACH_DATA": {
+                        "type": "object"
+                    },
+                    "CAN_UPDATE": {
+                        "type": "boolean"
+                    },
+                    "PARENT": {
+                        "type": "array"
+                    }
+                }
+            },
+            "LoanPurpose": {
+                "type": "object",
+                "properties": {
+                    "DESC": {
+                        "type": "string",
+                        "example": "Others"
+                    }
+                }
+            },
+            "Partner": {
+                "type": "object",
+                "properties": {
+                    "PARTNER_NAME": {
+                        "type": "string",
+                        "example": "MOBIKWIK"
+                    }
+                }
+            },
+            "Successresponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "statusCode": {
+                        "type": "integer",
+                        "example": 200
+                    },
+                    "result": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Customer"
+                        }
+                    }
+                }
+            },
+            "Failedresponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "statusCode": {
+                        "type": "integer",
+                        "example": 400
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "No Match found"
+                    }
+                }
+            },
+            "Artifacts": {
+                "type": "object",
+                "properties": {
+                    "APPLICATION_ID": {
+                        "type": "string",
+                        "example": "7654126136561087A"
+                    },
+                    "DOC_NAME": {
+                        "type": "object"
+                    },
+                    "ARTIFACT_ID": {
+                        "type": "string",
+                        "example": "No"
+                    },
+                    "EPOCH": {
+                        "type": "string",
+                        "example": "LXMUM33920-211595925"
+                    },
+                    "TASK_DESC": {
+                        "type": "string",
+                        "example": "PL_CL"
+                    },
+                    "FILE_COLLECTION": {
+                        "type": "string",
+                        "example": "PL"
+                    },
+                    "PERSONNEL_ID": {
+                        "type": "string",
+                        "example": "7605410926061033A"
+                    },
+                    "DOC_PATH": {
+                        "type": "object"
+                    },
+                    "DOC_TYPE": {
+                        "type": "object"
+                    },
+                    "CUSTOMER_ID": {
+                        "type": "string",
+                        "example": "Yes"
+                    },
+                    "TASK_ID": {
+                        "type": "string",
+                        "example": "lending-techops@mobikwik.com"
+                    },
+                    "CUSTOMER_ACCEPTANCE": {
+                        "type": "string",
+                        "example": "VENDOR_V2"
+                    }
+                }
+            },
+            "Customer": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "customerId": {
+                            "type": "string"
+                        },
+                        "firstName": {
+                            "type": "string"
+                        },
+                        "lastName": {
+                            "type": "string"
+                        },
+                        "fatherName": {
+                            "type": "string"
+                        },
+                        "mobile": {
+                            "type": "number"
+                        },
+                        "email": {
+                            "type": "string"
+                        },
+                        "pan": {
+                            "type": "string"
+                        },
+                        "gender": {
+                            "type": "string"
+                        },
+                        "maritalStatus": {
+                            "type": "string"
+                        },
+                        "updatedAt": {
+                            "type": "number"
+                        }
+                    }
+                }
+            },
+            "Address": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "accomodationType": {
+                            "type": "string"
+                        },
+                        "fullAdress": {
+                            "type": "string"
+                        },
+                        "addressType": {
+                            "type": "string"
+                        },
+                        "state": {
+                            "type": "string"
+                        },
+                        "district": {
+                            "type": "string"
+                        },
+                        "subDistrict": {
+                            "type": "string"
+                        },
+                        "area": {
+                            "type": "string"
+                        },
+                        "pincode": {
+                            "type": "string"
+                        },
+                        "country": {
+                            "type": "string"
+                        },
+                        "isPermanentAddress": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "Employment": {
+                "type": "object",
+                "properties": {
+                    "employmentStartDate": {
+                        "type": "string"
+                    },
+                    "designation": {
+                        "type": "string"
+                    },
+                    "companyAddress": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "fileName": {
+                                    "type": "string"
+                                },
+                                "fileLink": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "companyName": {
+                        "type": "string"
+                    },
+                    "industry": {
+                        "type": "string"
+                    },
+                    "natureOfBusiness": {
+                        "type": "string"
+                    },
+                    "salary": {
+                        "type": "object",
+                        "properties": {
+                            "currency": {
+                                "type": "string"
+                            },
+                            "monthlyGross": {
+                                "type": "string"
+                            },
+                            "monthlyNet": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "Financial": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "accountHolderName": {
+                            "type": "string"
+                        },
+                        "bankName": {
+                            "type": "string"
+                        },
+                        "operatingSince": {
+                            "type": "string"
+                        },
+                        "accountType": {
+                            "type": "string"
+                        },
+                        "bankStatements": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "fileName": {
+                                        "type": "string"
+                                    },
+                                    "fileLink": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Documents": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "documentType": {
+                            "type": "string"
+                        },
+                        "documentName": {
+                            "type": "string"
+                        },
+                        "documentNumber": {
+                            "type": "number"
+                        },
+                        "files": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "fileName": {
+                                        "type": "string"
+                                    },
+                                    "fileLink": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
