@@ -34,8 +34,11 @@ const routes = (app: any): void => {
     app.group("/v1", (router: Router) => {
         // TODO define v1 route group
         const controller = new StudentController();
-        // router.post("/createStudent", controller.create);
+        router.post("/createStudent", controller.createStudent);
         router.get("/student/:id", controller.getStudentByID);
+        router.patch("/updateStudent/:id", controller.updateStudentById);
+        router.delete("/student/:id", controller.deleteStudentById);
+
         
     });
 
