@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { StudentService } from "services/studentService";
+import { createStudentSchema } from "../validators/studentValidators";
 
 
 const service = new StudentService();
@@ -7,6 +8,10 @@ const service = new StudentService();
 export class StudentController {
 
   async createStudent(req: Request, res: Response) {
+    const { error } = createStudentSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
     const student = await service.createStudent(req.body);
     res.status(201).json(student);
   }
